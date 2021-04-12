@@ -3,6 +3,11 @@ const ghostBookshelf = require('./base');
 
 const MemberSubscribeEvent = ghostBookshelf.Model.extend({
     tableName: 'members_subscribe_events',
+
+    member() {
+        return this.belongsTo('Member', 'member_id', 'id');
+    },
+
     customQuery(qb, options) {
         if (options.aggregateSubscriptionDeltas) {
             if (options.limit || options.filter) {
@@ -17,6 +22,15 @@ const MemberSubscribeEvent = ghostBookshelf.Model.extend({
         }
     }
 }, {
+    permittedOptions(methodName) {
+        const options = ghostBookshelf.Model.permittedOptions.call(this, methodName);
+
+        if (methodName === 'findAll') {
+            return options.concat('aggregateSubscriptionDeltas');
+        }
+
+        return options;
+    },
     async edit() {
         throw new errors.IncorrectUsageError('Cannot edit MemberSubscribeEvent');
     },

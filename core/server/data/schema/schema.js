@@ -12,7 +12,7 @@ module.exports = {
         id: {type: 'string', maxlength: 24, nullable: false, primary: true},
         uuid: {type: 'string', maxlength: 36, nullable: false, validations: {isUUID: true}},
         title: {type: 'string', maxlength: 2000, nullable: false, validations: {isLength: {max: 255}}},
-        slug: {type: 'string', maxlength: 191, nullable: false, unique: true},
+        slug: {type: 'string', maxlength: 191, nullable: false},
         mobiledoc: {type: 'text', maxlength: 1000000000, fieldtype: 'long', nullable: true},
         html: {type: 'text', maxlength: 1000000000, fieldtype: 'long', nullable: true},
         comment_id: {type: 'string', maxlength: 50, nullable: true},
@@ -21,6 +21,7 @@ module.exports = {
         featured: {type: 'bool', nullable: false, defaultTo: false},
         type: {type: 'string', maxlength: 50, nullable: false, defaultTo: 'post', validations: {isIn: [['post', 'page']]}},
         status: {type: 'string', maxlength: 50, nullable: false, defaultTo: 'draft'},
+        // NOTE: unused at the moment and reserved for future features
         locale: {type: 'string', maxlength: 6, nullable: true},
         visibility: {
             type: 'string',
@@ -56,7 +57,10 @@ module.exports = {
         codeinjection_head: {type: 'text', maxlength: 65535, nullable: true},
         codeinjection_foot: {type: 'text', maxlength: 65535, nullable: true},
         custom_template: {type: 'string', maxlength: 100, nullable: true},
-        canonical_url: {type: 'text', maxlength: 2000, nullable: true}
+        canonical_url: {type: 'text', maxlength: 2000, nullable: true},
+        '@@UNIQUE_CONSTRAINTS@@': [
+            ['slug', 'type']
+        ]
     },
     posts_meta: {
         id: {type: 'string', maxlength: 24, nullable: false, primary: true},
@@ -69,7 +73,8 @@ module.exports = {
         twitter_description: {type: 'string', maxlength: 500, nullable: true},
         meta_title: {type: 'string', maxlength: 2000, nullable: true, validations: {isLength: {max: 300}}},
         meta_description: {type: 'string', maxlength: 2000, nullable: true, validations: {isLength: {max: 500}}},
-        email_subject: {type: 'string', maxlength: 300, nullable: true}
+        email_subject: {type: 'string', maxlength: 300, nullable: true},
+        frontmatter: {type: 'text', maxlength: 65535, nullable: true}
     },
     users: {
         id: {type: 'string', maxlength: 24, nullable: false, primary: true},
@@ -85,7 +90,11 @@ module.exports = {
         facebook: {type: 'string', maxlength: 2000, nullable: true},
         twitter: {type: 'string', maxlength: 2000, nullable: true},
         accessibility: {type: 'text', maxlength: 65535, nullable: true},
+        // TODO: would be good to add validation here to control for all possible status values.
+        //       The ones that come up by reviewing the user model are:
+        //       'active', 'inactive', 'locked', 'warn-1', 'warn-2', 'warn-3', 'warn-4'
         status: {type: 'string', maxlength: 50, nullable: false, defaultTo: 'active'},
+        // NOTE: unused at the moment and reserved for future features
         locale: {type: 'string', maxlength: 6, nullable: true},
         visibility: {
             type: 'string',
@@ -169,6 +178,7 @@ module.exports = {
             }
         },
         key: {type: 'string', maxlength: 50, nullable: false, unique: true},
+        // NOTE: as JSON objects are no longer stored in `value` we could potentially reduce the maxlength
         value: {type: 'text', maxlength: 65535, nullable: true},
         type: {
             type: 'string',
@@ -179,9 +189,7 @@ module.exports = {
                     'array',
                     'string',
                     'number',
-                    'boolean',
-                    // TODO: `object` type needs to be removed once all existing object settings are removed
-                    'object'
+                    'boolean'
                 ]]
             }
         },
@@ -247,28 +255,11 @@ module.exports = {
         updated_by: {type: 'string', maxlength: 24, nullable: true}
     },
     brute: {
-        key: {type: 'string', maxlength: 191},
+        key: {type: 'string', maxlength: 191, primary: true},
         firstRequest: {type: 'bigInteger'},
         lastRequest: {type: 'bigInteger'},
         lifetime: {type: 'bigInteger'},
         count: {type: 'integer'}
-    },
-    webhooks: {
-        id: {type: 'string', maxlength: 24, nullable: false, primary: true},
-        event: {type: 'string', maxlength: 50, nullable: false, validations: {isLowercase: true}},
-        target_url: {type: 'string', maxlength: 2000, nullable: false},
-        name: {type: 'string', maxlength: 191, nullable: true},
-        secret: {type: 'string', maxlength: 191, nullable: true},
-        api_version: {type: 'string', maxlength: 50, nullable: false, defaultTo: 'v2'},
-        integration_id: {type: 'string', maxlength: 24, nullable: true},
-        status: {type: 'string', maxlength: 50, nullable: false, defaultTo: 'available'},
-        last_triggered_at: {type: 'dateTime', nullable: true},
-        last_triggered_status: {type: 'string', maxlength: 50, nullable: true},
-        last_triggered_error: {type: 'string', maxlength: 50, nullable: true},
-        created_at: {type: 'dateTime', nullable: false},
-        created_by: {type: 'string', maxlength: 24, nullable: false},
-        updated_at: {type: 'dateTime', nullable: true},
-        updated_by: {type: 'string', maxlength: 24, nullable: true}
     },
     sessions: {
         id: {type: 'string', maxlength: 24, nullable: false, primary: true},
@@ -291,6 +282,27 @@ module.exports = {
         slug: {type: 'string', maxlength: 191, nullable: false, unique: true},
         icon_image: {type: 'string', maxlength: 2000, nullable: true},
         description: {type: 'string', maxlength: 2000, nullable: true},
+        created_at: {type: 'dateTime', nullable: false},
+        created_by: {type: 'string', maxlength: 24, nullable: false},
+        updated_at: {type: 'dateTime', nullable: true},
+        updated_by: {type: 'string', maxlength: 24, nullable: true}
+    },
+    webhooks: {
+        id: {type: 'string', maxlength: 24, nullable: false, primary: true},
+        event: {type: 'string', maxlength: 50, nullable: false, validations: {isLowercase: true}},
+        target_url: {type: 'string', maxlength: 2000, nullable: false},
+        name: {type: 'string', maxlength: 191, nullable: true},
+        secret: {type: 'string', maxlength: 191, nullable: true},
+        // NOTE: the defaultTo does not make sense to set on DB layer as it leads to unnecessary maintenance every major release
+        //       it might make sense to introduce "isIn" validation checking if it's a valid version e.g: 'v3', 'v4', 'canary'
+        api_version: {type: 'string', maxlength: 50, nullable: false, defaultTo: 'v2'},
+        // NOTE: integration_id column needs "nullable: true" -> "nullable: false" migration (recreate table with nullable: false)
+        // CASE: Ghost instances initialized pre 4.0 will have this column set to nullable: true in db schema
+        integration_id: {type: 'string', maxlength: 24, nullable: false, references: 'integrations.id', cascadeDelete: true},
+        status: {type: 'string', maxlength: 50, nullable: false, defaultTo: 'available'},
+        last_triggered_at: {type: 'dateTime', nullable: true},
+        last_triggered_status: {type: 'string', maxlength: 50, nullable: true},
+        last_triggered_error: {type: 'string', maxlength: 50, nullable: true},
         created_at: {type: 'dateTime', nullable: false},
         created_by: {type: 'string', maxlength: 24, nullable: false},
         updated_at: {type: 'dateTime', nullable: true},
@@ -335,7 +347,7 @@ module.exports = {
         email: {type: 'string', maxlength: 191, nullable: false, unique: true, validations: {isEmail: true}},
         status: {
             type: 'string', maxlength: 50, nullable: false, defaultTo: 'free', validations: {
-                isIn: [['free', 'paid']]
+                isIn: [['free', 'paid', 'comped']]
             }
         },
         name: {type: 'string', maxlength: 191, nullable: true},
@@ -349,6 +361,68 @@ module.exports = {
         created_by: {type: 'string', maxlength: 24, nullable: false},
         updated_at: {type: 'dateTime', nullable: true},
         updated_by: {type: 'string', maxlength: 24, nullable: true}
+    },
+    products: {
+        id: {type: 'string', maxlength: 24, nullable: false, primary: true},
+        name: {type: 'string', maxlength: 191, nullable: false, unique: true},
+        slug: {type: 'string', maxlength: 191, nullable: false, unique: true},
+        created_at: {type: 'dateTime', nullable: false},
+        updated_at: {type: 'dateTime', nullable: true}
+    },
+    members_products: {
+        id: {type: 'string', maxlength: 24, nullable: false, primary: true},
+        member_id: {type: 'string', maxlength: 24, nullable: false, references: 'members.id', cascadeDelete: true},
+        product_id: {type: 'string', maxlength: 24, nullable: false, references: 'products.id', cascadeDelete: true},
+        sort_order: {type: 'integer', nullable: false, unsigned: true, defaultTo: 0}
+    },
+    members_payment_events: {
+        id: {type: 'string', maxlength: 24, nullable: false, primary: true},
+        member_id: {type: 'string', maxlength: 24, nullable: false, references: 'members.id', cascadeDelete: true},
+        amount: {type: 'integer', nullable: false},
+        currency: {type: 'string', maxLength: 3, nullable: false},
+        source: {type: 'string', maxlength: 50, nullable: false},
+        created_at: {type: 'dateTime', nullable: false}
+    },
+    members_login_events: {
+        id: {type: 'string', maxlength: 24, nullable: false, primary: true},
+        member_id: {type: 'string', maxlength: 24, nullable: false, references: 'members.id', cascadeDelete: true},
+        created_at: {type: 'dateTime', nullable: false}
+    },
+    members_email_change_events: {
+        id: {type: 'string', maxlength: 24, nullable: false, primary: true},
+        member_id: {type: 'string', maxlength: 24, nullable: false, references: 'members.id', cascadeDelete: true},
+        to_email: {type: 'string', maxlength: 191, nullable: false, unique: false, validations: {isEmail: true}},
+        from_email: {type: 'string', maxlength: 191, nullable: false, unique: false, validations: {isEmail: true}},
+        created_at: {type: 'dateTime', nullable: false}
+    },
+    members_status_events: {
+        id: {type: 'string', maxlength: 24, nullable: false, primary: true},
+        member_id: {type: 'string', maxlength: 24, nullable: false, references: 'members.id', cascadeDelete: true},
+        from_status: {
+            type: 'string', maxlength: 50, nullable: true, validations: {
+                isIn: [['free', 'paid', 'comped']]
+            }
+        },
+        to_status: {
+            type: 'string', maxlength: 50, nullable: true, validations: {
+                isIn: [['free', 'paid', 'comped']]
+            }
+        },
+        created_at: {type: 'dateTime', nullable: false}
+    },
+    members_paid_subscription_events: {
+        id: {type: 'string', maxlength: 24, nullable: false, primary: true},
+        member_id: {type: 'string', maxlength: 24, nullable: false, references: 'members.id', cascadeDelete: true},
+        from_plan: {type: 'string', maxlength: 255, nullable: true},
+        to_plan: {type: 'string', maxlength: 255, nullable: true},
+        currency: {type: 'string', maxLength: 3, nullable: false},
+        source: {
+            type: 'string', maxlength: 50, nullable: false, validations: {
+                isIn: [['stripe']]
+            }
+        },
+        mrr_delta: {type: 'integer', nullable: false},
+        created_at: {type: 'dateTime', nullable: false}
     },
     labels: {
         id: {type: 'string', maxlength: 24, nullable: false, primary: true},
@@ -392,7 +466,7 @@ module.exports = {
         updated_at: {type: 'dateTime', nullable: true},
         updated_by: {type: 'string', maxlength: 24, nullable: true},
         /* Below fields eventually should be normalised e.g. stripe_plans table, link to here on plan_id */
-        plan_nickname: {type: 'string', maxlength: 50, nullable: true},
+        plan_nickname: {type: 'string', maxlength: 50, nullable: false},
         plan_interval: {type: 'string', maxlength: 50, nullable: false},
         plan_amount: {type: 'integer', nullable: false},
         plan_currency: {type: 'string', maxLength: 3, nullable: false}
@@ -403,6 +477,27 @@ module.exports = {
         subscribed: {type: 'bool', nullable: false, defaultTo: true},
         created_at: {type: 'dateTime', nullable: false},
         source: {type: 'string', maxlength: 50, nullable: true}
+    },
+    stripe_products: {
+        id: {type: 'string', maxlength: 24, nullable: false, primary: true},
+        product_id: {type: 'string', maxlength: 24, nullable: false, unique: false, references: 'products.id'},
+        stripe_product_id: {type: 'string', maxlength: 255, nullable: false, unique: true},
+        created_at: {type: 'dateTime', nullable: false},
+        updated_at: {type: 'dateTime', nullable: true}
+    },
+    stripe_prices: {
+        id: {type: 'string', maxlength: 24, nullable: false, primary: true},
+        stripe_price_id: {type: 'string', maxlength: 255, nullable: false, unique: true},
+        stripe_product_id: {type: 'string', maxlength: 255, nullable: false, unique: false, references: 'stripe_products.stripe_product_id'},
+        active: {type: 'boolean', nullable: false},
+        livemode: {type: 'boolean', nullable: false},
+        nickname: {type: 'string', maxlength: 50, nullable: true},
+        currency: {type: 'string', maxLength: 3, nullable: false},
+        amount: {type: 'integer', nullable: false},
+        type: {type: 'string', maxlength: 50, nullable: false, defaultTo: 'recurring', validations: {isIn: [['recurring', 'one_time']]}},
+        interval: {type: 'string', maxlength: 50, nullable: false},
+        created_at: {type: 'dateTime', nullable: false},
+        updated_at: {type: 'dateTime', nullable: true}
     },
     actions: {
         id: {type: 'string', maxlength: 24, nullable: false, primary: true},
